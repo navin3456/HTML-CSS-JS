@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>form and input</title>
+
+<body>
+ <form  onsubmit="return agecal(event)">
+    <label>Name</label><input type="text" name="name">
+    <label>age</label><input type="number" id="age">
+    <input type="submit" >
+    <p id="result">
+        
+    </p>
+ </form>
+    <script>
+        function agecal(){
+            event.preventDefault(); 
+        let x=document.getElementById("age").value;
+         x=parseInt(x); 
+
+        if(x<=18){
+            document.getElementById("result").innerHTML="you are not eligible for voting sorry try next time ";
+        } else{
+            document.getElementById("result").innerHTML="you are eligible for voting thank you for this support";
+        }
+    }
+
+
+    </script>
+</body>
+</html>
