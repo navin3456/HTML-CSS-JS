@@ -1,0 +1,245 @@
+
+<style>
+.app{padding:1.5rem 0;font-family:var(--font-sans);}
+.cmd-tabs{display:flex;gap:6px;margin-bottom:1.75rem;flex-wrap:wrap;}
+.ctab{padding:7px 16px;border-radius:20px;border:0.5px solid var(--color-border-secondary);font-size:13px;cursor:pointer;background:transparent;color:var(--color-text-secondary);transition:all 0.15s;font-weight:400;}
+.ctab.active{background:#534AB7;color:#fff;border-color:#534AB7;font-weight:500;}
+.section{margin-bottom:1.5rem;}
+.sec-title{font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.6rem;}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.1rem 1.25rem;margin-bottom:.75rem;}
+.card-title{font-size:15px;font-weight:500;color:var(--color-text-primary);margin:0 0 .4rem;}
+.card-desc{font-size:13px;color:var(--color-text-secondary);line-height:1.7;margin:0 0 .75rem;}
+.flag-grid{display:flex;flex-direction:column;gap:6px;}
+.flag-row{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,2fr);gap:12px;align-items:start;padding:7px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.flag-row:last-child{border-bottom:none;}
+.flag-cmd{font-family:var(--font-mono);font-size:12px;color:#3C3489;background:#EEEDFE;padding:3px 8px;border-radius:6px;word-break:break-all;}
+.flag-desc{font-size:13px;color:var(--color-text-secondary);line-height:1.5;}
+.output-block{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 14px;font-family:var(--font-mono);font-size:12px;color:var(--color-text-primary);margin:.75rem 0;line-height:1.8;white-space:pre;}
+.add-line{color:#0F6E56;}
+.del-line{color:#993C1D;}
+.meta-line{color:#534AB7;}
+.warn-box{background:#FAEEDA;border-left:3px solid #BA7517;padding:9px 13px;font-size:13px;color:#633806;line-height:1.6;margin:.75rem 0;border-radius:0;}
+.safe-box{background:#E1F5EE;border-left:3px solid #1D9E75;padding:9px 13px;font-size:13px;color:#085041;line-height:1.6;margin:.75rem 0;border-radius:0;}
+.quiz-wrap{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.1rem 1.25rem;margin-top:1rem;}
+.quiz-q{font-size:14px;font-weight:500;color:var(--color-text-primary);margin:0 0 .75rem;}
+.quiz-opts{display:flex;flex-direction:column;gap:6px;}
+.qopt{padding:8px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);font-size:13px;cursor:pointer;text-align:left;background:transparent;color:var(--color-text-primary);transition:all .15s;}
+.qopt:hover{background:var(--color-background-secondary);}
+.qopt.correct{background:#E1F5EE;border-color:#1D9E75;color:#085041;}
+.qopt.wrong{background:#FCEBEB;border-color:#E24B4A;color:#501313;}
+.qfb{font-size:13px;margin-top:.6rem;padding:8px 12px;border-radius:var(--border-radius-md);line-height:1.5;}
+.qfb.correct{background:#E1F5EE;color:#085041;}
+.qfb.wrong{background:#FCEBEB;color:#501313;}
+.badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;font-weight:500;margin-right:4px;}
+.b-safe{background:#E1F5EE;color:#085041;}
+.b-warn{background:#FAEEDA;color:#633806;}
+.b-danger{background:#FCEBEB;color:#501313;}
+.cheatsheet{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;margin-top:.5rem;}
+.cs-item{background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;}
+.cs-cmd{font-family:var(--font-mono);font-size:11px;color:#3C3489;margin-bottom:3px;}
+.cs-desc{font-size:11px;color:var(--color-text-secondary);line-height:1.4;}
+</style>
+
+<div class="app">
+<h2 class="sr-only">Git deep-dive reference for git log, git diff, git revert, and git restore</h2>
+
+<div class="cmd-tabs" id="tabs"></div>
+<div id="content"></div>
+</div>
+
+<script>
+const pages = [
+  {
+    id:0, label:"git log",
+    intro:"git log shows your commit history — every saved snapshot, who made it, and when. It's your project's timeline.",
+    variants:[
+      {cmd:"git log", desc:"Full history. Shows hash, author, date, message for every commit."},
+      {cmd:"git log -5", desc:"Limits to last 5 commits. Replace 5 with any number."},
+      {cmd:"git log --oneline", desc:"One line per commit: short hash + message. Best for a quick overview."},
+      {cmd:"git log --oneline --graph", desc:"Adds a visual branch tree on the left — great once you start using branches."},
+      {cmd:"git log --since='Jan 1 2025'", desc:"Only commits after this date."},
+      {cmd:"git log --until='Dec 31 2025'", desc:"Only commits before this date."},
+      {cmd:"git log --since='Jan 1 2025' --until='Mar 31 2025'", desc:"Commits between two dates — a range."},
+      {cmd:"git log --author='yourname'", desc:"Filter by who made the commit. Useful in team projects."},
+      {cmd:"git log -- filename.html", desc:"Show commits that touched a specific file only."},
+      {cmd:"git log -p", desc:"Show the actual code changes (diff) for each commit — very detailed."},
+    ],
+    output:`commit a3f92c1 (HEAD -> main)
+Author: You <you@email.com>
+Date:   Mon May 12 2025
+
+    Add contact form to homepage
+
+commit b81d3e4
+Author: You <you@email.com>
+Date:   Sun May 11 2025
+
+    Fix navbar spacing bug`,
+    outputNote:"The long string (a3f92c1) is the commit hash — copy it to use in git revert or git diff.",
+    quiz:{q:"You want to see only commits made in March 2025. Which command works?",opts:["git log -3","git log --since='Mar 1 2025' --until='Mar 31 2025'","git log --author='march'","git log --oneline -p"],ans:1,fb:"Correct! --since and --until filter by date range. You can combine them freely."}
+  },
+  {
+    id:1, label:"git diff",
+    intro:"git diff compares versions of your files — it shows exactly what lines were added or removed. The + lines are additions (green), the - lines are deletions (red).",
+    variants:[
+      {cmd:"git diff", desc:"Compare your working files vs. the last commit. Only shows unstaged changes."},
+      {cmd:"git diff --staged", desc:"Compare staged files vs. the last commit. Use after git add."},
+      {cmd:"git diff HEAD", desc:"Compare everything (staged + unstaged) vs. the last commit."},
+      {cmd:"git diff a3f92c1", desc:"Compare current files vs. a specific commit hash."},
+      {cmd:"git diff a3f92c1 b81d3e4", desc:"Compare two specific commits against each other."},
+      {cmd:"git diff main feature-branch", desc:"Compare two branches — what's different between them."},
+      {cmd:"git diff -- index.html", desc:"Diff only a specific file, not the whole project."},
+      {cmd:"git diff --stat", desc:"Shows a summary (which files changed, how many lines) instead of the full diff."},
+    ],
+    output:`diff --git a/index.html b/index.html
+--- a/index.html
++++ b/index.html
+@@ -10,7 +10,7 @@
+-  <h1>Welcome</h1>
++  <h1>Welcome to My Portfolio</h1>
++  <p>Hello world</p>`,
+    outputLabel:"Reading a diff:",
+    outputNote:"Lines starting with - were removed. Lines starting with + were added. Lines with no symbol are unchanged context.",
+    warn:"If git diff shows nothing after editing a file — you've probably already staged it with git add. Use git diff --staged instead.",
+    quiz:{q:"You ran git add index.html. Now git diff shows nothing. Why?",opts:["The file has no changes","git diff only shows unstaged changes — use git diff --staged","You need to commit first","git diff is broken"],ans:1,fb:"Exactly right. Once staged, changes move out of git diff's view. git diff --staged is your tool now."}
+  },
+  {
+    id:2, label:"git revert",
+    intro:"git revert safely undoes a commit by creating a brand new commit that reverses the changes. Your history is never deleted — it's the safe way to undo in a team.",
+    variants:[
+      {cmd:"git revert a3f92c1", desc:"Undo the commit with that hash. Opens a text editor to confirm the message — save and close to finish."},
+      {cmd:"git revert a3f92c1 --no-edit", desc:"Undo the commit and skip the editor — uses the default message automatically."},
+      {cmd:"git revert HEAD", desc:"Undo the most recent commit. HEAD always means 'the latest commit'."},
+      {cmd:"git revert HEAD~1", desc:"Undo the commit before the latest. ~1 means 'one step back', ~2 means two steps back."},
+      {cmd:"git revert a3f92c1..b81d3e4", desc:"Revert a range of commits (everything between two hashes)."},
+      {cmd:"git revert -n a3f92c1", desc:"Stage the undo changes but don't commit yet — lets you review before finalizing."},
+    ],
+    safe:`git revert is always safe. It never deletes history — it adds a new "undo" commit on top. This is why teams prefer it over other undo methods.`,
+    warn:"Never confuse git revert with git reset. git reset rewrites history (dangerous on shared repos). git revert is always the safer choice.",
+    danger:"Before reverting, always run git log --oneline to find the exact hash you want to undo. Reverting the wrong commit causes confusion.",
+    quiz:{q:"What does git revert HEAD~1 do?",opts:["Deletes the last commit permanently","Creates a new commit that undoes the second-to-last commit","Shows the last commit's changes","Moves you to a different branch"],ans:1,fb:"Right! HEAD~1 means one commit before the latest. git revert creates a new undo commit — history stays intact."}
+  },
+  {
+    id:3, label:"git restore",
+    intro:"git restore discards changes in your files — it's the modern way to undo edits before they're committed. Think of it as an 'undo typing' command.",
+    variants:[
+      {cmd:"git restore index.html", desc:"Throw away all unsaved (unstaged) edits in index.html. Goes back to last commit. Cannot be undone!"},
+      {cmd:"git restore .", desc:"Discard all unstaged changes across every file in the project."},
+      {cmd:"git restore --staged index.html", desc:"Unstage a file — remove it from the staging area but keep your edits in the file."},
+      {cmd:"git restore --staged .", desc:"Unstage everything. Your changes remain in the files, just no longer staged."},
+      {cmd:"git restore --source=HEAD~1 index.html", desc:"Restore a file to how it looked in a specific commit (one step back here)."},
+      {cmd:"git restore --source=a3f92c1 index.html", desc:"Restore a single file to a specific commit's version by hash."},
+    ],
+    safe:"git restore --staged is completely safe — it only unstages, it doesn't delete your work. Use it freely if you accidentally staged the wrong file.",
+    warn:"git restore index.html (without --staged) permanently discards your unsaved edits. There is no undo. Double-check before running this.",
+    cheatsheet:[
+      {cmd:"git restore file", desc:"Discard file edits"},
+      {cmd:"git restore --staged file", desc:"Unstage a file"},
+      {cmd:"git restore .", desc:"Discard all edits"},
+      {cmd:"git restore --source=HASH file", desc:"Restore to old version"},
+    ],
+    quiz:{q:"You staged 3 files but realized one shouldn't be in this commit. What do you run?",opts:["git restore filename","git restore --staged filename","git revert filename","git diff --staged filename"],ans:1,fb:"Correct! --staged removes the file from staging but keeps your edits safe. Then you can commit the other 2 files cleanly."}
+  }
+];
+
+let activeTab = 0;
+let quizAnswered = {};
+
+function renderTabs(){
+  document.getElementById("tabs").innerHTML = pages.map(p=>`
+    <button class="ctab${activeTab===p.id?' active':''}" onclick="show(${p.id})">${p.label}</button>
+  `).join("");
+}
+
+function show(id){
+  activeTab=id;
+  renderTabs();
+  const p=pages[id];
+  const answered=quizAnswered[id];
+
+  const flagsHtml=p.variants.map(v=>`
+    <div class="flag-row">
+      <div class="flag-cmd">${v.cmd}</div>
+      <div class="flag-desc">${v.desc}</div>
+    </div>
+  `).join("");
+
+  let outputHtml="";
+  if(p.output){
+    const lines=p.output.split("\n").map(l=>{
+      if(l.startsWith("+")&&!l.startsWith("+++")) return `<span class="add-line">${l}</span>`;
+      if(l.startsWith("-")&&!l.startsWith("---")) return `<span class="del-line">${l}</span>`;
+      if(l.startsWith("commit")||l.startsWith("diff")||l.startsWith("@@")) return `<span class="meta-line">${l}</span>`;
+      return l;
+    }).join("\n");
+    outputHtml=`
+      <div class="sec-title">${p.outputLabel||"Sample output"}</div>
+      <div class="output-block">${lines}</div>
+      ${p.outputNote?`<p style="font-size:12px;color:var(--color-text-tertiary);margin:.25rem 0 0;">${p.outputNote}</p>`:""}
+    `;
+  }
+
+  let safeHtml="";
+  if(p.safe) safeHtml=`<div class="safe-box"><i class="ti ti-shield-check" aria-hidden="true" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i>${p.safe}</div>`;
+  if(p.warn) safeHtml+=`<div class="warn-box"><i class="ti ti-alert-triangle" aria-hidden="true" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i>${p.warn}</div>`;
+  if(p.danger) safeHtml+=`<div class="warn-box" style="background:#FCEBEB;border-color:#E24B4A;color:#501313;"><i class="ti ti-x" aria-hidden="true" style="font-size:15px;vertical-align:-2px;margin-right:6px;"></i>${p.danger}</div>`;
+
+  let cheatHtml="";
+  if(p.cheatsheet){
+    cheatHtml=`
+      <div class="sec-title" style="margin-top:1rem;">Quick cheatsheet</div>
+      <div class="cheatsheet">
+        ${p.cheatsheet.map(c=>`<div class="cs-item"><div class="cs-cmd">${c.cmd}</div><div class="cs-desc">${c.desc}</div></div>`).join("")}
+      </div>
+    `;
+  }
+
+  const qa=p.quiz;
+  const optsHtml=qa.opts.map((o,i)=>{
+    let cls="qopt";
+    if(answered!==undefined){
+      if(i===qa.ans) cls+=" correct";
+      else if(i===answered&&answered!==qa.ans) cls+=" wrong";
+    }
+    return `<button class="${cls}" onclick="answerQuiz(${id},${i})" ${answered!==undefined?"disabled":""}>${o}</button>`;
+  }).join("");
+
+  const fbHtml=answered!==undefined?`<div class="qfb ${answered===qa.ans?'correct':'wrong'}">${qa.fb}</div>`:"";
+
+  document.getElementById("content").innerHTML=`
+    <p style="font-size:14px;color:var(--color-text-secondary);line-height:1.7;margin:0 0 1.25rem;">${p.intro}</p>
+
+    <div class="section">
+      <div class="sec-title">All variants & flags</div>
+      <div class="card">
+        <div class="flag-grid">${flagsHtml}</div>
+      </div>
+    </div>
+
+    ${outputHtml ? `<div class="section">${outputHtml}</div>` : ""}
+
+    ${safeHtml ? `<div class="section">${safeHtml}</div>` : ""}
+
+    ${cheatHtml}
+
+    <div class="quiz-wrap">
+      <div class="sec-title">Test yourself</div>
+      <p class="quiz-q">${qa.q}</p>
+      <div class="quiz-opts">${optsHtml}</div>
+      ${fbHtml}
+    </div>
+
+    <div style="margin-top:1.25rem;display:flex;gap:8px;justify-content:flex-end;">
+      ${id < pages.length-1 ? `<button class="ctab active" style="border-radius:var(--border-radius-md);" onclick="show(${id+1})">Next: ${pages[id+1].label} →</button>` : `<button class="ctab active" style="border-radius:var(--border-radius-md);" onclick="sendPrompt('I finished the deep dive on git log, diff, revert and restore. Can you give me one combined real-world scenario that uses all 4 together?')">Give me a combined scenario ↗</button>`}
+    </div>
+  `;
+}
+
+function answerQuiz(sid,chosen){
+  quizAnswered[sid]=chosen;
+  show(sid);
+}
+
+renderTabs();
+show(0);
+</script>
