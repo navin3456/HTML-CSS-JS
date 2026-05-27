@@ -1,25 +1,832 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Simple Form</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Analyst 2-Year Progress Tracker</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Chosen Palette: Slate and Warm Neutrals with Teal and Royal Indigo Accents (Stone-50 background, Teal-600 active indicators, Indigo-600 premium branding highlights, Slate text) -->
+<!-- Application Structure Plan: A highly structured, dashboard-driven Single Page Application (SPA). It splits the 2-year roadmap into four functional workspaces: Dashboard, Master Roadmap, Skill Assessment, and Portfolio/STAR Sandbox. Tab-based navigation allows for immediate screen updates without losing state. Checklist tracking and skill sliders are bound to reactive state, automatically redrawing progress visualizations upon user input to keep the experience deeply engaging. -->
+<!-- Visualization & Content Choices: 
+1. Core Skill Distribution -> Relationships -> Interactive Radar Chart (Chart.js) -> Reflects the user's self-assessed capabilities across 6 core competency vectors instantly.
+2. Roadmap Milestone Completion -> Change -> Horizontal Stacked Progress Bar & Value Index (Chart.js) -> Tracks structural progress across 5 sequential preparation phases over 24 months.
+3. Portfolio/STAR Sandbox -> Organize -> Dynamic form list with inline checklist cards -> Allows structural planning of the three essential domain projects (Marketing, Finance, Healthcare) outlined in the primary report.
+4. Interview Prep Tool -> Inform -> Text-based interactive workspace -> Enables writing and testing contextual STAR responses. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+<style>
+body {
+    background-color: #fafaf9;
+    color: #1c1917;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+.chart-container {
+    position: relative;
+    width: 100%;
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+    height: 320px;
+    max-height: 350px;
+}
+.workspace-view {
+    display: none;
+    animation: slideUp 0.35s ease-out;
+}
+.workspace-view.active {
+    display: block;
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.card-premium {
+    background: #ffffff;
+    border: 1px solid #e7e5e4;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s ease-in-out;
+}
+.card-premium:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08);
+}
+.tab-link.active {
+    background-color: #ffffff;
+    color: #4f46e5;
+    border-color: #e7e5e4;
+    border-bottom-color: #ffffff;
+}
+</style>
 </head>
-<body>
+<body class="antialiased min-h-screen flex flex-col">
 
-    <h2>Contact Form</h2>
+<header class="bg-slate-900 text-white border-b border-slate-800 py-6 px-6 md:px-12 sticky top-0 z-20 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">&#128200;</span>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">Data Analyst <span class="text-teal-400">2-Year Tracker</span></h1>
+                    <p class="text-xs text-slate-400 font-medium uppercase tracking-widest mt-0.5">Transition & Mastery Blueprint</p>
+                </div>
+            </div>
+        </div>
+        <div class="flex items-center gap-6 bg-slate-800 border border-slate-700 px-4 py-2.5 rounded-lg">
+            <div class="text-center">
+                <p class="text-xs text-slate-400 font-bold uppercase">Overall Progress</p>
+                <p id="global-progress-percent" class="text-xl font-black text-teal-400">0%</p>
+            </div>
+            <div class="h-8 w-px bg-slate-700"></div>
+            <div class="text-center">
+                <p class="text-xs text-slate-400 font-bold uppercase">Completed Steps</p>
+                <p id="global-completed-count" class="text-xl font-black text-indigo-400">0/24</p>
+            </div>
+            <div class="h-8 w-px bg-slate-700"></div>
+            <div class="text-center">
+                <p class="text-xs text-slate-400 font-bold uppercase">Estimated Readiness</p>
+                <p id="global-readiness-badge" class="text-xl font-black text-amber-400">Low</p>
+            </div>
+        </div>
+    </div>
+</header>
 
-    <form action="#" method="post">
-        <label for="name">Name:</label><br>
-        <input type="text" id="name" name="name"><br><br>
+<div class="border-b border-stone-200 bg-stone-100/80 sticky top-20 z-10 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 md:px-8">
+        <nav class="flex overflow-x-auto -mb-px" aria-label="Tabs">
+            <button class="tab-link active px-6 py-4 border-t-2 border-x border-transparent font-semibold text-sm text-stone-500 hover:text-stone-800 transition-colors focus:outline-none whitespace-nowrap" data-target="view-dashboard">
+                &#128187; Dashboard
+            </button>
+            <button class="tab-link px-6 py-4 border-t-2 border-x border-transparent font-semibold text-sm text-stone-500 hover:text-stone-800 transition-colors focus:outline-none whitespace-nowrap" data-target="view-roadmap">
+                &#128197; 24-Month Roadmap
+            </button>
+            <button class="tab-link px-6 py-4 border-t-2 border-x border-transparent font-semibold text-sm text-stone-500 hover:text-stone-800 transition-colors focus:outline-none whitespace-nowrap" data-target="view-skills">
+                &#127919; Skill Profiler
+            </button>
+            <button class="tab-link px-6 py-4 border-t-2 border-x border-transparent font-semibold text-sm text-stone-500 hover:text-stone-800 transition-colors focus:outline-none whitespace-nowrap" data-target="view-portfolio">
+                &#128188; Portfolio & STAR Sandbox
+            </button>
+        </nav>
+    </div>
+</div>
 
-        <label for="email">Email:</label><br>
-        <input type="email" id="email" name="email"><br><br>
+<main class="flex-grow max-w-7xl mx-auto w-full px-4 md:px-8 py-8">
 
-        <label for="message">Message:</label><br>
-        <textarea id="message" name="message"></textarea><br><br>
+    <section id="view-dashboard" class="workspace-view active space-y-8">
+        <div class="bg-gradient-to-r from-indigo-900 to-slate-800 text-white rounded-2xl p-6 md:p-8 shadow-xl">
+            <h2 class="text-2xl md:text-3xl font-extrabold mb-2">Welcome to your Career Transition Portal</h2>
+            <p class="text-slate-300 max-w-3xl text-sm md:text-base leading-relaxed">
+                This personalized tracker monitors your path toward securing a data analyst role within your 2-year target. Leverage the structural goals based on actual global hiring trends, AI modifications, and domain requirements to track your performance.
+            </p>
+            <div class="mt-6 flex flex-wrap gap-3">
+                <button class="bg-teal-500 hover:bg-teal-600 text-slate-900 font-bold px-5 py-2.5 rounded-lg text-sm transition-all focus:outline-none shadow" onclick="switchTab('view-roadmap')">
+                    Go to Roadmap Checklist &rarr;
+                </button>
+                <button class="bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-semibold px-5 py-2.5 rounded-lg text-sm transition-all focus:outline-none" onclick="switchTab('view-skills')">
+                    Update Technical Skills
+                </button>
+            </div>
+        </div>
 
-        <input type="submit" value="Submit">
-    </form>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="card-premium rounded-2xl p-6">
+                <h3 class="text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
+                    <span>&#128302;</span> Core Skill Readiness Map
+                </h3>
+                <p class="text-xs text-stone-500 mb-4">
+                    Assesses your progress across the six critical dimensions employers evaluate in 2026. Keep this updated inside the "Skill Profiler" tab to see your gaps shrink.
+                </p>
+                <div class="chart-container">
+                    <canvas id="skillsRadarChart"></canvas>
+                </div>
+            </div>
 
+            <div class="card-premium rounded-2xl p-6 flex flex-col justify-between">
+                <div>
+                    <h3 class="text-lg font-bold text-stone-800 mb-4 flex items-center gap-2">
+                        <span>&#128201;</span> Cumulative Roadmap Completion
+                    </h3>
+                    <p class="text-xs text-stone-500 mb-4">
+                        A macro-level progress index across the five core preparation phases of your 2-year timeline. Complete checkpoints inside the "24-Month Roadmap" to drive this forward.
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="phasesProgressChart"></canvas>
+                    </div>
+                </div>
+                <div class="mt-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+                    <p class="text-xs text-indigo-900 font-bold mb-1">Current Milestone Focus:</p>
+                    <p id="dashboard-focus-text" class="text-sm text-indigo-700">Begin with laying foundations in mathematics, statistics, and advanced Excel modeling.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-teal-50 border border-teal-200 rounded-2xl p-6">
+                <p class="text-2xl mb-1">&#128640;</p>
+                <h4 class="font-bold text-teal-900 text-lg mb-1">T-Shaped Development</h4>
+                <p class="text-xs text-teal-800 leading-relaxed">Focus on a specific domain (Marketing, Finance, or Healthcare) early. Generalist roles face high competition; domain experts command premium pay.</p>
+            </div>
+            <div class="bg-indigo-50 border border-indigo-200 rounded-2xl p-6">
+                <p class="text-2xl mb-1">&#129302;</p>
+                <h4 class="font-bold text-indigo-900 text-lg mb-1">AI Tool Augmentation</h4>
+                <p class="text-xs text-indigo-800 leading-relaxed">Do not fight the machines—partner with them. Learn to use LLMs and prompt frameworks to write boilerplate SQL, optimize queries, and clean structures rapidly.</p>
+            </div>
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6">
+                <p class="text-2xl mb-1">&#128188;</p>
+                <h4 class="font-bold text-amber-900 text-lg mb-1">Unguided Portfolios</h4>
+                <p class="text-xs text-amber-800 leading-relaxed">Ditch the generic course certifications and copy-paste projects. Real hiring managers demand verified GitHub projects built from messy, raw datasets.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-roadmap" class="workspace-view space-y-8">
+        <header class="border-b border-stone-200 pb-4">
+            <h2 class="text-3xl font-extrabold text-stone-800 mb-2">24-Month Mastery Timeline</h2>
+            <p class="text-stone-600 max-w-4xl text-sm leading-relaxed">
+                Your 2-year transition strategy is split into five progressive phases. As you complete each module, check off the specific checkpoints below. This logic directly updates your global progression indexes.
+            </p>
+        </header>
+
+        <div class="space-y-6">
+            <div class="card-premium rounded-2xl p-6 border-l-4 border-indigo-600">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <span class="bg-indigo-100 text-indigo-800 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Phase 1: Months 1–3</span>
+                        <h3 class="text-xl font-bold text-stone-800 mt-1">Foundational Bootstrapping</h3>
+                    </div>
+                    <span id="phase-1-badge" class="text-xs font-bold text-stone-500">0% Done</span>
+                </div>
+                <p class="text-xs text-stone-500 mb-4">Establishes essential mathematical, Excel, and structured SQL knowledge before programming begins.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-indigo-600 focus:ring-indigo-500 rounded" data-phase="1" data-id="1">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Operational Research</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Explore local job listings, trace titles, map out compensation ranges, and identify industry paths.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-indigo-600 focus:ring-indigo-500 rounded" data-phase="1" data-id="2">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Advanced Excel Architecture</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Master XLOOKUP, INDEX/MATCH, PivotTables, and Power Query tools for rapid data reshaping.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-indigo-600 focus:ring-indigo-500 rounded" data-phase="1" data-id="3">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Business Mathematics</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Learn linear algebra basics, mean, variance, normal distributions, and p-value formulations.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-indigo-600 focus:ring-indigo-500 rounded" data-phase="1" data-id="4">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Core Relational SQL</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Practice GROUP BY, complex JOIN systems, subqueries, and table schema design principles.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-premium rounded-2xl p-6 border-l-4 border-teal-500">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <span class="bg-teal-100 text-teal-800 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Phase 2: Months 4–6</span>
+                        <h3 class="text-xl font-bold text-stone-800 mt-1">Analytical Execution</h3>
+                    </div>
+                    <span id="phase-2-badge" class="text-xs font-bold text-stone-500">0% Done</span>
+                </div>
+                <p class="text-xs text-stone-500 mb-4">Deepens analytical depth with visual design, programming, and predictive hypothesis test setups.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-teal-600 focus:ring-teal-500 rounded" data-phase="2" data-id="5">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">BI Dashboard Design</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Select Power BI or Tableau. Learn star schema data models, DAX measures, and UX principles.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-teal-600 focus:ring-teal-500 rounded" data-phase="2" data-id="6">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Python Scripting Foundations</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Develop functional scripting logic focusing on Pandas, NumPy, and code troubleshooting pipelines.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-teal-600 focus:ring-teal-500 rounded" data-phase="2" data-id="7">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Exploratory Data Analysis (EDA)</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Write automation procedures to clean raw datasets, filter structures, and identify anomalies.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-teal-600 focus:ring-teal-500 rounded" data-phase="2" data-id="8">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Advanced Statistics & A/B Testing</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Run formal regression analysis, construct confidence bounds, and configure A/B experiment structures.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-premium rounded-2xl p-6 border-l-4 border-amber-500">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Phase 3: Months 7–12</span>
+                        <h3 class="text-xl font-bold text-stone-800 mt-1">Specialized Portfolios</h3>
+                    </div>
+                    <span id="phase-3-badge" class="text-xs font-bold text-stone-500">0% Done</span>
+                </div>
+                <p class="text-xs text-stone-500 mb-4">Develops a public, unguided portfolio addressing domain-specific metrics and data-cleaning validations.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-amber-600 focus:ring-amber-500 rounded" data-phase="3" data-id="9">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Domain Project Selection</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Target a specific vertical (e.g., Marketing, Financial, or Healthcare Analytics metrics).</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-amber-600 focus:ring-amber-500 rounded" data-phase="3" data-id="10">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Unguided Analytics Build</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Scrape or ingest raw, uncleaned, unstructured records and build an end-to-end data pipeline.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-amber-600 focus:ring-amber-500 rounded" data-phase="3" data-id="11">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Validation & Bias Audits</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Document data sources, audit structures for systematic bias, and establish validation controls.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-amber-600 focus:ring-amber-500 rounded" data-phase="3" data-id="12">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Portfolio Deployments</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Launch clean, structured GitHub repositories containing comprehensive, impact-driven STAR READMEs.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-premium rounded-2xl p-6 border-l-4 border-pink-500">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <span class="bg-pink-100 text-pink-800 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Phase 4: Months 13–18</span>
+                        <h3 class="text-xl font-bold text-stone-800 mt-1">Outreach & Strategic Job Hunt</h3>
+                    </div>
+                    <span id="phase-4-badge" class="text-xs font-bold text-stone-500">0% Done</span>
+                </div>
+                <p class="text-xs text-stone-500 mb-4">Transforms qualifications into structured market outreach and robust interview performance.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-pink-600 focus:ring-pink-500 rounded" data-phase="4" data-id="13">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">ATS Resume Tuning</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Rewrite bullet points focusing on quantifiable, commercial outcomes rather than simple task checklists.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-pink-600 focus:ring-pink-500 rounded" data-phase="4" data-id="14">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Standardized Technical Drills</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Practice time-boxed SQL challenges, prompt-based code generation, and pipeline debug scripts.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-pink-600 focus:ring-pink-500 rounded" data-phase="4" data-id="15">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Informational Interviews</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Secure conversations with active industry professionals to identify localized market needs.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-pink-600 focus:ring-pink-500 rounded" data-phase="4" data-id="16">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Mock Interview Simulators</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Drill responses using the STAR format, and practice converting analytical details into plain-language insights.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-premium rounded-2xl p-6 border-l-4 border-emerald-500">
+                <div class="flex justify-between items-center mb-4">
+                    <div>
+                        <span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Phase 5: Months 19–24</span>
+                        <h3 class="text-xl font-bold text-stone-800 mt-1">Land & Onboard (Junior Analyst integration)</h3>
+                    </div>
+                    <span id="phase-5-badge" class="text-xs font-bold text-stone-500">0% Done</span>
+                </div>
+                <p class="text-xs text-stone-500 mb-4">Landing your first analyst role and managing early career execution and quality strategies.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-emerald-600 focus:ring-emerald-500 rounded" data-phase="5" data-id="17">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Secure Entry-Level Role</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Land a role as a Junior Data Analyst, Marketing Analyst, Product Analyst, or Analytics Engineer.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-emerald-600 focus:ring-emerald-500 rounded" data-phase="5" data-id="18">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Data Source Validations</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Establish rigorous data trust standards within your new team's production workflows.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-emerald-600 focus:ring-emerald-500 rounded" data-phase="5" data-id="19">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Key Performance Metric Mastery</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Deeply understand your company's core drivers: retention trends, conversion rates, and profit boundaries.</p>
+                        </div>
+                    </label>
+                    <label class="flex items-start gap-3 p-3 bg-stone-50 hover:bg-stone-100 rounded-lg cursor-pointer border border-stone-200 transition-colors">
+                        <input type="checkbox" class="task-checkbox mt-1 text-emerald-600 focus:ring-emerald-500 rounded" data-phase="5" data-id="20">
+                        <div>
+                            <p class="text-sm font-bold text-stone-800">Stakeholder Integration</p>
+                            <p class="text-xs text-stone-500 mt-0.5">Master technical-to-executive communication to build operational trust with stakeholders.</p>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-skills" class="workspace-view space-y-8">
+        <header class="border-b border-stone-200 pb-4">
+            <h2 class="text-3xl font-extrabold text-stone-800 mb-2">Technical Skill Profiler</h2>
+            <p class="text-stone-600 max-w-4xl text-sm leading-relaxed">
+                Assess your confidence levels from 0 (No exposure) to 100 (Advanced execution) across key modern data analyst competencies. Adjusting these values instantly updates your Skill Radar Chart on the Dashboard.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="card-premium rounded-2xl p-6 md:p-8 space-y-6">
+                <h3 class="text-lg font-bold text-stone-800 mb-4 border-b border-stone-100 pb-2">Adjust Proficiency Sliders</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-bold text-stone-700">SQL Mastery (Joins, CTEs, Windows)</label>
+                            <span id="val-sql" class="text-sm font-extrabold text-indigo-600">30%</span>
+                        </div>
+                        <input type="range" id="slide-sql" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" min="0" max="100" value="30">
+                        <p class="text-xs text-stone-500 mt-1">Foundational database structures, relational integrity, execution timing optimization.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-bold text-stone-700">Python Scripting & Pandas Dataframes</label>
+                            <span id="val-python" class="text-sm font-extrabold text-indigo-600">10%</span>
+                        </div>
+                        <input type="range" id="slide-python" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" min="0" max="100" value="10">
+                        <p class="text-xs text-stone-500 mt-1">Automated loops, parsing nested formats, managing missing features with dataframes.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-bold text-stone-700">Statistics, Probability & Regression</label>
+                            <span id="val-stats" class="text-sm font-extrabold text-indigo-600">20%</span>
+                        </div>
+                        <input type="range" id="slide-stats" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" min="0" max="100" value="20">
+                        <p class="text-xs text-stone-500 mt-1">Significance thresholds, outlier calculation mechanics, sampling models.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-bold text-stone-700">Visual Storytelling & BI Tools</label>
+                            <span id="val-viz" class="text-sm font-extrabold text-indigo-600">15%</span>
+                        </div>
+                        <input type="range" id="slide-viz" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" min="0" max="100" value="15">
+                        <p class="text-xs text-stone-500 mt-1">Usability patterns, dashboard design principles, DAX/LOD functions.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-bold text-stone-700">Business Communication & KPI Translation</label>
+                            <span id="val-comm" class="text-sm font-extrabold text-indigo-600">40%</span>
+                        </div>
+                        <input type="range" id="slide-comm" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" min="0" max="100" value="40">
+                        <p class="text-xs text-stone-500 mt-1">Translating granular technical patterns into actionable executive briefings.</p>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-sm font-bold text-stone-700">AI Prompting & Copilot Workflows</label>
+                            <span id="val-ai" class="text-sm font-extrabold text-indigo-600">10%</span>
+                        </div>
+                        <input type="range" id="slide-ai" class="w-full h-2 bg-stone-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" min="0" max="100" value="10">
+                        <p class="text-xs text-stone-500 mt-1">Prompt engineering, standardizing workflows, debugging script errors.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col justify-between space-y-6">
+                <div class="card-premium rounded-2xl p-6 bg-stone-900 text-white">
+                    <h3 class="text-lg font-bold text-teal-400 mb-2">Skills Target Milestone</h3>
+                    <p class="text-sm text-stone-300 leading-relaxed mb-4">
+                        To pass standard entry screenings in 2026, target at least <strong>70%</strong> proficiency in SQL, Statistics, and Visual Storytelling.
+                    </p>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-stone-400">Current Average Proficiency:</span>
+                            <span id="avg-proficiency-text" class="font-bold text-white">21%</span>
+                        </div>
+                        <div class="w-full bg-slate-800 rounded-full h-2">
+                            <div id="avg-proficiency-bar" class="bg-teal-400 h-2 rounded-full" style="width: 21%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-premium rounded-2xl p-6 bg-slate-50 border border-stone-200">
+                    <h4 class="font-bold text-stone-800 text-sm mb-2">Strategic Target Guide:</h4>
+                    <p class="text-xs text-stone-600 leading-relaxed mb-3">
+                        Hiring filters increasingly look for <strong>T-shaped profiles</strong>. Build deep, specialized knowledge in SQL and Visual Storytelling early to set yourself apart from other candidates.
+                    </p>
+                    <button class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors focus:outline-none" onclick="switchTab('view-dashboard')">
+                        View Updated Chart on Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="view-portfolio" class="workspace-view space-y-8">
+        <header class="border-b border-stone-200 pb-4">
+            <h2 class="text-3xl font-extrabold text-stone-800 mb-2">Portfolio Projects & STAR Sandbox</h2>
+            <p class="text-stone-600 max-w-4xl text-sm leading-relaxed">
+                Hiring managers prioritize robust, unguided project experience over simple academic certificates. Use this interactive workbook to outline your three domain portfolio projects and practice drafting behavior-based answers using the STAR format.
+            </p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-5 space-y-6">
+                <h3 class="text-lg font-bold text-stone-800 border-b border-stone-100 pb-2">Portfolio Milestone Tracker</h3>
+                
+                <div class="card-premium rounded-2xl p-5 border-l-4 border-indigo-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-stone-800">Project 1: Marketing Campaign</h4>
+                        <input type="checkbox" id="project-1-check" class="project-indicator text-indigo-600 focus:ring-indigo-500 rounded">
+                    </div>
+                    <p class="text-xs text-stone-500 mb-3">Focus on CAC, conversion funnels, churn, and CLV dashboards using Power BI or Tableau.</p>
+                    <div class="space-y-1 text-xs text-stone-600">
+                        <div class="flex items-center gap-2"><span class="text-teal-600">&#10003;</span> Source: Raw Campaign Records</div>
+                        <div class="flex items-center gap-2"><span class="text-teal-600">&#10003;</span> Metric Focus: ROAS, Customer Churn</div>
+                    </div>
+                </div>
+
+                <div class="card-premium rounded-2xl p-5 border-l-4 border-emerald-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-stone-800">Project 2: Financial Performance</h4>
+                        <input type="checkbox" id="project-2-check" class="project-indicator text-emerald-600 focus:ring-emerald-500 rounded">
+                    </div>
+                    <p class="text-xs text-stone-500 mb-3">Forecast revenue margins, analyze cash flow variables, and detect transaction anomalies.</p>
+                    <div class="space-y-1 text-xs text-stone-600">
+                        <div class="flex items-center gap-2"><span class="text-teal-600">&#10003;</span> Source: Ledger Datasets</div>
+                        <div class="flex items-center gap-2"><span class="text-teal-600">&#10003;</span> Metric Focus: Operating Margin, EBITDA</div>
+                    </div>
+                </div>
+
+                <div class="card-premium rounded-2xl p-5 border-l-4 border-amber-500">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-stone-800">Project 3: Healthcare Ingestion</h4>
+                        <input type="checkbox" id="project-3-check" class="project-indicator text-amber-600 focus:ring-amber-500 rounded">
+                    </div>
+                    <p class="text-xs text-stone-500 mb-3">Model patient journey cycles, bed capacities, and readmission rates with strict HIPAA compliance.</p>
+                    <div class="space-y-1 text-xs text-stone-600">
+                        <div class="flex items-center gap-2"><span class="text-teal-600">&#10003;</span> Source: Public Clinical Cohorts</div>
+                        <div class="flex items-center gap-2"><span class="text-teal-600">&#10003;</span> Metric Focus: Length of Stay (LOS), Bed Turn</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7 card-premium rounded-2xl p-6 md:p-8 space-y-6">
+                <div class="border-b border-stone-100 pb-3 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-stone-800 flex items-center gap-2">
+                        <span>&#128100;</span> Behavioral STAR Interview Workspace
+                    </h3>
+                    <span class="text-xs font-bold text-indigo-600 uppercase">Draft Mode</span>
+                </div>
+                
+                <p class="text-xs text-stone-500">
+                    Hiring managers evaluate your communications through structural problem-solving. Practice describing an analytical project or past challenge using the STAR framework below.
+                </p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">Situation (Define the concrete business challenge)</label>
+                        <textarea id="star-situation" class="w-full p-3 border border-stone-200 rounded-lg text-sm bg-stone-50 focus:ring-1 focus:ring-indigo-500 focus:outline-none" rows="2" placeholder="Example: Marketing CAC spiked by 25% while trial-to-paid conversions fell..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">Task (Identify your direct operational ownership)</label>
+                        <textarea id="star-task" class="w-full p-3 border border-stone-200 rounded-lg text-sm bg-stone-50 focus:ring-1 focus:ring-indigo-500 focus:outline-none" rows="2" placeholder="Example: I was tasked with isolating pipeline leakages and presenting recommendations..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">Action (Detail your analysis, tooling, and data validations)</label>
+                        <textarea id="star-action" class="w-full p-3 border border-stone-200 rounded-lg text-sm bg-stone-50 focus:ring-1 focus:ring-indigo-500 focus:outline-none" rows="3" placeholder="Example: I wrote complex SQL joins to trace touchpoints, built a Power BI funnel view..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-stone-700 uppercase tracking-wider mb-1">Result (Highlight quantified, business outcomes)</label>
+                        <textarea id="star-result" class="w-full p-3 border border-stone-200 rounded-lg text-sm bg-stone-50 focus:ring-1 focus:ring-indigo-500 focus:outline-none" rows="2" placeholder="Example: Identified a conversion leak, reducing manual report overhead by 15 hrs..."></textarea>
+                    </div>
+                </div>
+                
+                <div class="flex justify-between items-center">
+                    <button class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-lg transition-colors focus:outline-none" onclick="saveStarWorkspace()">
+                        Temporarily Save Draft
+                    </button>
+                    <span id="star-save-notify" class="text-xs text-emerald-600 font-bold hidden">Draft Saved in Session!</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer class="bg-slate-900 text-slate-400 py-8 px-6 text-center border-t border-slate-800 mt-12">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4 text-xs">
+        <p>&copy; 2026 Data Career Insights. Structured progression toward modern analytical excellence.</p>
+        <p class="text-slate-500">In-memory Session Tracking Only • Refreshing will clear local session progress</p>
+    </div>
+</footer>
+
+<script>
+let totalRoadmapSteps = 20; 
+let completedSteps = 0;
+
+let state = {
+    checkedTasks: {},
+    skills: {
+        sql: 30,
+        python: 10,
+        stats: 20,
+        viz: 15,
+        comm: 40,
+        ai: 10
+    },
+    projects: {
+        p1: false,
+        p2: false,
+        p3: false
+    },
+    star: {
+        situation: '',
+        task: '',
+        action: '',
+        result: ''
+    }
+};
+
+const tooltipConfig = {
+    callbacks: {
+        title: function(tooltipItems) {
+            const item = tooltipItems[0];
+            let label = item.chart.data.labels[item.dataIndex];
+            if (Array.isArray(label)) {
+                return label.join(' ');
+            } else {
+                return label;
+            }
+        }
+    }
+};
+
+let skillsRadarChartInstance;
+let phasesProgressChartInstance;
+
+const initDashboardCharts = () => {
+    const ctxRadar = document.getElementById('skillsRadarChart').getContext('2d');
+    skillsRadarChartInstance = new Chart(ctxRadar, {
+        type: 'radar',
+        data: {
+            labels: ['SQL Mastery', 'Python/R', 'Statistics', 'Visual Storytelling', 'Business Comm', 'AI Prompting'],
+            datasets: [{
+                label: 'Current Profiency (%)',
+                data: [state.skills.sql, state.skills.python, state.skills.stats, state.skills.viz, state.skills.comm, state.skills.ai],
+                backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                borderColor: '#4f46e5',
+                pointBackgroundColor: '#0d9488',
+                pointBorderColor: '#fff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: tooltipConfig,
+                legend: { display: false }
+            },
+            scales: {
+                r: {
+                    angleLines: { color: '#e7e5e4' },
+                    grid: { color: '#e7e5e4' },
+                    pointLabels: { color: '#44403c', font: { size: 10, weight: 'bold' } },
+                    ticks: { display: false, min: 0, max: 100 }
+                }
+            }
+        }
+    });
+
+    const ctxProgress = document.getElementById('phasesProgressChart').getContext('2d');
+    phasesProgressChartInstance = new Chart(ctxProgress, {
+        type: 'bar',
+        data: {
+            labels: [
+                ['Phase 1', 'Months 1-3'],
+                ['Phase 2', 'Months 4-6'],
+                ['Phase 3', 'Months 7-12'],
+                ['Phase 4', 'Months 13-18'],
+                ['Phase 5', 'Months 19-24']
+            ],
+            datasets: [{
+                label: 'Completion Progress (%)',
+                data: [0, 0, 0, 0, 0],
+                backgroundColor: ['#4f46e5', '#0d9488', '#d97706', '#db2777', '#10b981'],
+                borderRadius: 5
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: tooltipConfig,
+                legend: { display: false }
+            },
+            scales: {
+                x: { min: 0, max: 100, grid: { color: '#e7e5e4' }, ticks: { callback: value => value + '%' } },
+                y: { grid: { display: false } }
+            }
+        }
+    });
+};
+
+const updateStateVisuals = () => {
+    let totalsChecked = 0;
+    let phaseCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let tasksPerPhase = 4;
+
+    const checks = document.querySelectorAll('.task-checkbox');
+    checks.forEach(chk => {
+        const ph = chk.getAttribute('data-phase');
+        if (chk.checked) {
+            totalsChecked++;
+            phaseCounts[ph]++;
+        }
+    });
+
+    const completionPercent = Math.round((totalsChecked / totalRoadmapSteps) * 100);
+    document.getElementById('global-progress-percent').textContent = completionPercent + '%';
+    document.getElementById('global-completed-count').textContent = `${totalsChecked}/${totalRoadmapSteps}`;
+
+    let readiness = 'Beginner';
+    if (completionPercent >= 20 && completionPercent < 50) readiness = 'Developing';
+    else if (completionPercent >= 50 && completionPercent < 80) readiness = 'Capable';
+    else if (completionPercent >= 80) readiness = 'Job-Ready';
+    document.getElementById('global-readiness-badge').textContent = readiness;
+
+    for (let ph = 1; ph <= 5; ph++) {
+        let pct = Math.round((phaseCounts[ph] / tasksPerPhase) * 100);
+        document.getElementById(`phase-${ph}-badge`).textContent = pct + '% Done';
+        if (phasesProgressChartInstance) {
+            phasesProgressChartInstance.data.datasets[0].data[ph - 1] = pct;
+        }
+    }
+    if (phasesProgressChartInstance) {
+        phasesProgressChartInstance.update();
+    }
+
+    let focusText = 'Begin with laying foundations in mathematics, statistics, and advanced Excel modeling.';
+    if (phaseCounts[1] === 4 && phaseCounts[2] < 4) {
+        focusText = 'Focus on programming foundations: Master BI dashboards and build solid basic python scripts.';
+    } else if (phaseCounts[2] === 4 && phaseCounts[3] < 4) {
+        focusText = 'Design and execute custom portfolio pipelines covering targeted industry domains.';
+    } else if (phaseCounts[3] === 4 && phaseCounts[4] < 4) {
+        focusText = 'Optimize resumes, rehearse behavioral STAR answers, and reach out to active professionals.';
+    } else if (phaseCounts[4] === 4 && phaseCounts[5] < 4) {
+        focusText = 'Land your transition role and implement strong operational data-trust validations.';
+    } else if (totalsChecked === totalRoadmapSteps) {
+        focusText = 'Full 2-Year Preparation Loop Achieved! Maintain continuous upskilling.';
+    }
+    document.getElementById('dashboard-focus-text').textContent = focusText;
+};
+
+const switchTab = (targetId) => {
+    const tabLinks = document.querySelectorAll('.tab-link');
+    const views = document.querySelectorAll('.workspace-view');
+
+    views.forEach(view => view.classList.remove('active'));
+    tabLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('data-target') === targetId) {
+            link.classList.add('active');
+        }
+    });
+
+    document.getElementById(targetId).classList.add('active');
+
+    if (skillsRadarChartInstance) skillsRadarChartInstance.resize();
+    if (phasesProgressChartInstance) phasesProgressChartInstance.resize();
+};
+
+document.querySelectorAll('.tab-link').forEach(link => {
+    link.addEventListener('click', () => {
+        switchTab(link.getAttribute('data-target'));
+    });
+});
+
+document.querySelectorAll('.task-checkbox').forEach(chk => {
+    chk.addEventListener('change', () => {
+        updateStateVisuals();
+    });
+});
+
+const setupSkillsSliders = () => {
+    const keys = ['sql', 'python', 'stats', 'viz', 'comm', 'ai'];
+    keys.forEach((key, idx) => {
+        const slider = document.getElementById(`slide-${key}`);
+        const label = document.getElementById(`val-${key}`);
+        slider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            label.textContent = val + '%';
+            state.skills[key] = val;
+
+            if (skillsRadarChartInstance) {
+                skillsRadarChartInstance.data.datasets[0].data[idx] = val;
+                skillsRadarChartInstance.update();
+            }
+
+            let sum = Object.values(state.skills).reduce((a, b) => a + b, 0);
+            let avg = Math.round(sum / 6);
+            document.getElementById('avg-proficiency-text').textContent = avg + '%';
+            document.getElementById('avg-proficiency-bar').style.width = avg + '%';
+        });
+    });
+};
+
+const saveStarWorkspace = () => {
+    state.star.situation = document.getElementById('star-situation').value;
+    state.star.task = document.getElementById('star-task').value;
+    state.star.action = document.getElementById('star-action').value;
+    state.star.result = document.getElementById('star-result').value;
+
+    const notify = document.getElementById('star-save-notify');
+    notify.classList.remove('hidden');
+    setTimeout(() => notify.classList.add('hidden'), 2500);
+};
+
+window.onload = function() {
+    initDashboardCharts();
+    setupSkillsSliders();
+    updateStateVisuals();
+};
+</script>
 </body>
 </html>
